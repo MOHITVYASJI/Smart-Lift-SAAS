@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="login-container">
+    <div class="glass-panel login-box">
+        <h2 style="text-align: center; font-size: 2rem; margin-bottom: 2rem;">Smart Lift<span style="color:var(--accent)">.</span></h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="color: #ef4444; margin-bottom: 1.5rem; text-align: center; font-size: 0.95rem; font-weight: 600;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; display: block; font-weight: 600;">ADMIN EMAIL</label>
+            <input type="email" name="email" placeholder="admin@college.com" required>
+            
+            <label style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; display: block; font-weight: 600;">PASSWORD</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+            
+            <button type="submit" class="btn-primary" style="margin-top: 1rem;">Authenticate Identity</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

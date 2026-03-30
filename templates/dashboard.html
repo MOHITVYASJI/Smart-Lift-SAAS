@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-layout">
+    
+    {% include 'sidebar.html' %}
+    
+    <!-- Main Content -->
+    <div class="main-content" style="padding: 3rem;">
+        <style>
+            :root {
+                --accent: {{ tenant.primary_color }};
+            }
+        </style>
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2.2rem;">
+                {% if tenant.logo_path %}<img src="{{ tenant.logo_path }}" style="height:40px; vertical-align:middle; border-radius:4px; margin-right:10px;">{% endif %}
+                {{ tenant.name }} Overview
+            </h1>
+            <div style="display:flex; gap:1rem;">
+                <!-- Phase 7: Date Filter -->
+                <form method="GET" style="display:flex; gap:0.5rem; background:rgba(255,255,255,0.05); padding:0.2rem; border-radius:8px;">
+                    <input type="date" name="date" style="background:transparent; border:none; color:white; padding:0.5rem; outline:none;" value="{{ request.args.get('date', '') }}">
+                    <button type="submit" class="btn-primary" style="padding:0.5rem 1rem;"><i class="fa-solid fa-filter"></i></button>
+                    {% if request.args.get('date') %}
+                    <a href="{{ url_for('dashboard') }}" class="btn-primary" style="background:transparent; border:1px solid var(--danger); color:var(--danger); padding:0.5rem 1rem;"><i class="fa-solid fa-xmark"></i></a>
+                    {% endif %}
+                </form>
+                <a href="{{ url_for('export_logs', date=request.args.get('date')) }}" class="btn-primary" style="background:var(--accent); border:none;"><i class="fa-solid fa-download"></i> Export Analytics CSV</a>
+            </div>
+        </div>
+        
+        <div class="kpi-grid">
+            <div class="glass-panel kpi-card" style="border-top: 3px solid var(--accent);">
+                <h3>Registered Identities</h3>
+                <div class="value">{{ total_users }}</div>
+            </div>
+            <div class="glass-panel kpi-card" style="border-top: 3px solid #8b5cf6;">
+                <h3>Total Lift Transits</h3>
+                <div class="value">{{ logs|length }}</div>
+            </div>
+            <div class="glass-panel kpi-card" style="border-top: 3px solid #f59e0b;">
+                <h3>Peak Traffic Hour</h3>
+                <div class="value" style="color: #f59e0b; font-size: 1.5rem; margin-top: 1rem;"><i class="fa-solid fa-fire"></i> {{ peak_hour }}</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem;">
+            <!-- Logs Table -->
+            <div class="glass-panel">
+                <h3 style="margin-bottom: 1.5rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-shield-halved"></i> Access Stream</h3>
+                <div style="max-height: 400px; overflow-y:auto;">
+                    <table style="width:100%;">
+                        <thead style="position: sticky; top:0; background:var(--surface);">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Identity</th>
+                                <th>Transit Leg</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td style="color: var(--text-muted);">{{ log.timestlap.strftime('%b %d, %Y - %H:%M') }}</td>
+                                <td style="font-weight: 600;"><i class="fa-regular fa-user" style="color:var(--text-muted); margin-right:5px;"></i> {{ log.user.name if log.user else log.status }}</td>
+                                <td><span class="badge badge-info"><i class="fa-solid fa-elevator"></i> Floor {{ log.Source_floor }} <i class="fa-solid fa-arrow-right"></i> Floor {{ log.Floor_selection }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 3rem;">No access events recorded.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Charts & Analytics -->
+            <div class="glass-panel" style="align-self: start;">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> Identity Distribution</h3>
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Operator', 'Faculty', 'Disability', 'Temporary', 'Guests', 'Alerts'],
+            datasets: [{
+                data: {{ chart_data | tojson | safe if chart_data else [0,0,0,0,0,0] }},
+                backgroundColor: ['#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#dc2626'],
+                borderWidth: 0
+            }]
+        },
+        options: { plugins: { legend: { labels: { color: 'white' } } } }
+    });
+</script>
+{% endblock %}
